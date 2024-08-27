@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: channel1-cm
+spec:
+  replicas: 1
+  serviceName: channel1-cm
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: channel1-cm
+      app.kubernetes.io/name: channel1-cm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: channel1-cm
+        app.kubernetes.io/name: channel1-cm
+    spec:
+      containers:
+        - name: origin
+          image: unifiedstreaming/origin:1.12.11
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: status
+              containerPort: 82
+              protocol: TCP
+          env:
+            - name: UspLicenseKey
+              value: your_license_key_here
+            - name: LOG_LEVEL
+              value: info
+          resources:
+            limits:
+              cpu: '0.7'
+              memory: 1.5Gi
+          volumeMounts:
+            - name: channel1
+              mountPath: /var/www/unified-origin/channel1
+            - name: apache-config-volume
+              mountPath: /etc/apache2/httpd.conf
+              subPath: httpd.conf
+          livenessProbe:
+            httpGet:
+              path: /channel1/channel1.isml/state
+              port: http
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /channel1/channel1.isml/state
+              port: http
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /channel1/channel1.isml/state
+              port: http
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 60
+      volumes:
+        - name: apache-config-volume
+          configMap:
+            name: apache-config 
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+  volumeClaimTemplates:
+  - metadata:
+      name: channel1
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 500Gi
+      volumeMode: Filesystem
+      storageClassName: linode-block-storage-retain
