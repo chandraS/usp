@@ -483,13 +483,13 @@ data:
     #EnableMMAP off
     #EnableSendfile on
 
-    # Load config files from the config directory "/etc/apache2/conf.d".
-    #
-    IncludeOptional /etc/apache2/conf.d/*.conf
+   
 
     # KeepAlive settings
     KeepAlive On
     MaxKeepAliveRequests 100
     KeepAliveTimeout 5
-  
-  
+
+    # Load config files from the config directory "/etc/apache2/conf.d".
+    #
+    IncludeOptional /etc/apache2/conf.d/*.conf
