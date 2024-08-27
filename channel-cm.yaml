@@ -27,7 +27,7 @@ spec:
               protocol: TCP
           env:
             - name: UspLicenseKey
-              value: your_license_key_here
+              value: bmthYmFuaUBha2FtYWkuY29tfDIwMjQwODAxIDAwOjAwOjAwLDkwfHN0cmVhbSh2b2QsbGl2ZSx2b2QybGl2ZSk7ZHJtKHBsYXlyZWFkeSxtYXJsaW4sd2lkZXZpbmUpO2NhcHR1cmUoaXNzLGhscyxkYXNoLGRlY3J5cHQpO2VuY29kZShhdmMpO2RlY29kZShhdmMpO21ldGFkYXRhKHRpbWVkKTtwYWNrYWdlKCk7c3VwcG9ydCgxKTtpb19vcHQoKTtjaGVjaygpO29lbSgpO3ZlcnNpb24oMS43LjQpfHRlc3RfVm1lZGlhX1BvQ3w0OTM5MDM1YjUxMmQ0NmQ3OWU2MDNjYWY3YzRjMTJhNnxhMzhlNzI5Y2M1ZDQ3Y2EzYzk5OWQ4YjJiMTUwZTg5ZjAzOWUzOTdlNTA4YTVhOWFiMWU5OThiZjRkNTFmOGFjYWYwZWExNjRjNDI1YzgzZDI2NWU3NzQzZTFmZThmNWUwNDQ1MTliMmJhYzQ5Y2UxMThjZTlkZDQ0N2U4YjU5NDE5YzdjMjQ0MzA2MGViNDQ2ZTZhMDBkNDMxZjRlMDhiZTU5N2IzOTE1ZGViOTQ4NTMxZGU0ZDk4NjExMzY5N2Y0M2Q2NTIzNmE5NTU1OTZhNGE3NjhiZWJhNzE0MmNmMWRiZDRjY2M5NGZlOWEyOThmZjc0ZjM2NjA0ZWQ3NDkx
             - name: LOG_LEVEL
               value: info
           resources:
@@ -38,7 +38,7 @@ spec:
             - name: channel1
               mountPath: /var/www/unified-origin/channel1
             - name: apache-config-volume
-              mountPath: /etc/apache2/httpd.conf
+              mountPath: /etc/apache2/conf.d/httpd-custom.conf
               subPath: httpd.conf
           livenessProbe:
             httpGet:
@@ -67,10 +67,20 @@ spec:
             periodSeconds: 30
             successThreshold: 1
             failureThreshold: 60
+      initContainers:
+        - name: create-isml
+          image: unifiedstreaming/origin:1.12.11
+          command: ["sh", "-c", "if [ ! -f /var/www/unified-origin/channel1/channel1.isml ]; then mp4split -o /var/www/unified-origin/channel1/channel1.isml --database_path=/var/www/unified-origin/channel1/channel1.db3 --archiving=1 --archive_length=604800 --archive_segment_length=1800 --dvr_window_length=600 --restart_on_encoder_reconnect --hls.minimum_fragment_length=6 --hls.client_manifest_version=4 --splice_media --timed_metadata --mpd.minimum_fragment_length=6 --mpd.segment_template=time && chown -R apache:apache /var/www; fi"]
+          env:
+            - name: UspLicenseKey
+              value: bmthYmFuaUBha2FtYWkuY29tfDIwMjQwODAxIDAwOjAwOjAwLDkwfHN0cmVhbSh2b2QsbGl2ZSx2b2QybGl2ZSk7ZHJtKHBsYXlyZWFkeSxtYXJsaW4sd2lkZXZpbmUpO2NhcHR1cmUoaXNzLGhscyxkYXNoLGRlY3J5cHQpO2VuY29kZShhdmMpO2RlY29kZShhdmMpO21ldGFkYXRhKHRpbWVkKTtwYWNrYWdlKCk7c3VwcG9ydCgxKTtpb19vcHQoKTtjaGVjaygpO29lbSgpO3ZlcnNpb24oMS43LjQpfHRlc3RfVm1lZGlhX1BvQ3w0OTM5MDM1YjUxMmQ0NmQ3OWU2MDNjYWY3YzRjMTJhNnxhMzhlNzI5Y2M1ZDQ3Y2EzYzk5OWQ4YjJiMTUwZTg5ZjAzOWUzOTdlNTA4YTVhOWFiMWU5OThiZjRkNTFmOGFjYWYwZWExNjRjNDI1YzgzZDI2NWU3NzQzZTFmZThmNWUwNDQ1MTliMmJhYzQ5Y2UxMThjZTlkZDQ0N2U4YjU5NDE5YzdjMjQ0MzA2MGViNDQ2ZTZhMDBkNDMxZjRlMDhiZTU5N2IzOTE1ZGViOTQ4NTMxZGU0ZDk4NjExMzY5N2Y0M2Q2NTIzNmE5NTU1OTZhNGE3NjhiZWJhNzE0MmNmMWRiZDRjY2M5NGZlOWEyOThmZjc0ZjM2NjA0ZWQ3NDkx
+          volumeMounts:
+            - name: channel1
+              mountPath: /var/www/unified-origin/channel1
       volumes:
         - name: apache-config-volume
           configMap:
-            name: apache-config 
+            name: apache-config
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
